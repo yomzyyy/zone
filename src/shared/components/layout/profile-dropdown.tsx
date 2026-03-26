@@ -1,6 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
+import { User, Moon, Sun, LogIn, UserPlus } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import {
   DropdownMenu,
@@ -23,7 +24,7 @@ export function ProfileDropdown() {
       {/* Trigger — the button that opens the dropdown on click */}
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="rounded-full">
-          <span className="text-lg">👤</span>
+          <User className="h-5 w-5" />
         </Button>
       </DropdownMenuTrigger>
 
@@ -39,7 +40,7 @@ export function ProfileDropdown() {
         <DropdownMenuItem
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
         >
-          <span>{theme === "dark" ? "🌙" : "☀️"}</span>
+          {theme === "dark" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
           <span>Theme</span>
           <span className="ml-auto text-xs text-muted-foreground">
             {theme === "dark" ? "Dark" : "Light"}
@@ -49,8 +50,14 @@ export function ProfileDropdown() {
         <DropdownMenuSeparator />
 
         {/* Auth links — these will become real links in ZONE-003 */}
-        <DropdownMenuItem>🔑 Log in</DropdownMenuItem>
-        <DropdownMenuItem>✏️ Sign up</DropdownMenuItem>
+        <DropdownMenuItem>
+          <LogIn className="h-4 w-4" />
+          <span>Log in</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem>
+          <UserPlus className="h-4 w-4" />
+          <span>Sign up</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
