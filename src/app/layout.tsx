@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/shared/components/theme-provider";
+import { Navbar } from "@/shared/components/layout/navbar";
+import { Footer } from "@/shared/components/layout/footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -10,12 +12,10 @@ export const metadata: Metadata = {
   description: "Beat procrastination. Track your flow. Get things done.",
 };
 
-// This is the ROOT layout — it wraps every single page in your app.
-// Think of it as the <html> skeleton. The {children} is whatever page you're on.
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode; // ReactNode = any valid JSX content (elements, strings, etc.)
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -26,7 +26,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <div className="flex min-h-screen flex-col">
+            <Navbar />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </div>
         </ThemeProvider>
       </body>
     </html>
