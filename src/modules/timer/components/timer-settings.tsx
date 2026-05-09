@@ -3,6 +3,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog";
@@ -42,6 +43,9 @@ export function TimerSettingsModal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Timer Settings</DialogTitle>
+          <DialogDescription className="sr-only">
+            Configure timer mode, focus and break durations, and sound preferences.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
@@ -58,8 +62,8 @@ export function TimerSettingsModal({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="stopwatch">Stopwatch (count up)</SelectItem>
-                <SelectItem value="pomodoro">Pomodoro (count down)</SelectItem>
+                <SelectItem value="stopwatch">Zone</SelectItem>
+                <SelectItem value="pomodoro">Pomodoro</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -99,23 +103,6 @@ export function TimerSettingsModal({
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="long-break-duration">
-                  Long Break Duration (minutes)
-                </Label>
-                <Input
-                  id="long-break-duration"
-                  type="number"
-                  min={1}
-                  max={60}
-                  value={settings.longBreakDuration}
-                  onChange={(e) =>
-                    onUpdateSettings({
-                      longBreakDuration: clamp(parseInt(e.target.value) || 15, 1, 60),
-                    })
-                  }
-                />
-              </div>
             </>
           )}
 

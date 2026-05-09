@@ -1,0 +1,71 @@
+import { X } from "lucide-react";
+import { cn } from "@/shared/utils/utils";
+import type { Tag } from "../types";
+
+interface TagChipProps {
+  tag: Tag;
+  onRemove?: () => void;
+  onClick?: () => void;
+  active?: boolean;
+  className?: string;
+}
+
+// When `onClick` is provided the chip is rendered as a real <button> so it's
+// keyboard-activatable. The remove "X" is always its own button — when the
+// outer is also a button, we use a span+role="presentation" wrapper for the
+// X so we don't nest interactive elements.
+export function TagChip({
+  tag,
+  onRemove,
+  onClick,
+  active,
+  className,
+}: TagChipProps) {
+  const baseClass = cn(
+    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs",
+    onClick && "cursor-pointer hover:opacity-80",
+    active && "ring-2 ring-offset-1 ring-offset-background",
+    className,
+  );
+  const baseStyle = {
+    borderColor: tag.color,
+    color: tag.color,
+    backgroundColor: `${tag.color}1f`,
+  };
+
+  const removeButton = onRemove ? (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onRemove();
+      }}
+      aria-label={`Remove ${tag.name}`}
+      className="rounded-full hover:bg-foreground/10"
+    >
+      <X className="h-3 w-3" />
+    </button>
+  ) : null;
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={baseClass}
+        style={baseStyle}
+        aria-pressed={active ? true : undefined}
+      >
+        <span>{tag.name}</span>
+        {removeButton}
+      </button>
+    );
+  }
+
+  return (
+    <span className={baseClass} style={baseStyle}>
+      <span>{tag.name}</span>
+      {removeButton}
+    </span>
+  );
+}

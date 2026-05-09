@@ -5,8 +5,6 @@ export const DEFAULT_TIMER_SETTINGS: TimerSettings = {
   mode: "stopwatch",
   focusDuration: 25,
   breakDuration: 5,
-  longBreakDuration: 15,
-  sessionsUntilLongBreak: 4,
   soundEnabled: true,
 };
 

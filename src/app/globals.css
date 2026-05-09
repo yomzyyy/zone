@@ -128,3 +128,27 @@
     @apply font-sans;
   }
 }
+
+@utility scrollbar-subtle {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  scrollbar-gutter: stable;
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 9999px;
+    transition: background-color 150ms;
+  }
+  &:hover {
+    scrollbar-color: oklch(1 0 0 / 0.15) transparent;
+  }
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: oklch(1 0 0 / 0.15);
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}

@@ -43,9 +43,9 @@ describe("TimerControls", () => {
     expect(screen.getByText("Reset")).toBeInTheDocument();
   });
 
-  it("shows Reset when completed", () => {
-    render(<TimerControls {...defaultProps} timerState="completed" />);
-    expect(screen.getByText("Reset")).toBeInTheDocument();
+  it("does not show Reset when idle (stopping auto-resets)", () => {
+    render(<TimerControls {...defaultProps} timerState="idle" />);
+    expect(screen.queryByText("Reset")).not.toBeInTheDocument();
   });
 
   it("shows Skip Break during break state", () => {

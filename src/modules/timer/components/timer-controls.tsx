@@ -56,7 +56,7 @@ export function TimerControls({
       )}
 
       {/* Reset — only show when there's something to reset */}
-      {(timerState === "paused" || timerState === "completed") && (
+      {timerState === "paused" && (
         <Button size="lg" variant="outline" onClick={onReset} className="gap-2">
           <RotateCcw className="h-4 w-4" />
           Reset

@@ -1,15 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-// Creates a Supabase client for use in Server Components, API routes, and middleware.
-// Unlike the browser client, this one needs explicit cookie handling
-// because server-side code can't access document.cookie.
+const PLACEHOLDER_URL = "https://placeholder.supabase.co";
+const PLACEHOLDER_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MjAwMDAwMDAwMH0.zIZBb_vLqz7YFjP_YvKnRUvU8z9HxWp8mY5g9hQpJYI";
+
 export async function createClient() {
   const cookieStore = await cookies();
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    process.env.NEXT_PUBLIC_SUPABASE_URL || PLACEHOLDER_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || PLACEHOLDER_KEY,
     {
       cookies: {
         getAll() {
@@ -18,14 +19,14 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, options),
             );
           } catch {
-            // setAll is called from Server Components where cookies can't be set.
-            // This is fine — the middleware handles setting cookies instead.
+            // setAll is called from Server Components where cookies can't
+            // be set. Middleware handles cookie writes there.
           }
         },
       },
-    }
+    },
   );
 }

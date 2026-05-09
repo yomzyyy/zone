@@ -8,8 +8,6 @@ export interface TimerSettings {
   mode: TimerMode; // "stopwatch" or "pomodoro"
   focusDuration: number; // in minutes (default 25)
   breakDuration: number; // in minutes (default 5)
-  longBreakDuration: number; // in minutes (default 15)
-  sessionsUntilLongBreak: number; // how many focus sessions before a long break (default 4)
   soundEnabled: boolean;
 }
 
@@ -19,6 +17,7 @@ export interface TimerSession {
   mode: TimerMode;
   timerState: TimerState;
   pausedElapsed: number; // ms elapsed when paused (so we can resume accurately)
+  taskId?: string; // optional task this session is logging time against
   pomodoroState?: {
     currentCycle: number; // which focus session we're on (1-4)
     isBreak: boolean; // are we in a break right now?
@@ -34,4 +33,5 @@ export interface CompletedSession {
   duration: number; // ms
   mode: TimerMode;
   completed: boolean; // false if user stopped early (abandoned)
+  taskId?: string;
 }

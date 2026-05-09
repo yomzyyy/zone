@@ -17,14 +17,6 @@ describe("DEFAULT_TIMER_SETTINGS", () => {
     expect(DEFAULT_TIMER_SETTINGS.breakDuration).toBe(5);
   });
 
-  it("has 15 minute long break duration", () => {
-    expect(DEFAULT_TIMER_SETTINGS.longBreakDuration).toBe(15);
-  });
-
-  it("triggers long break after 4 sessions", () => {
-    expect(DEFAULT_TIMER_SETTINGS.sessionsUntilLongBreak).toBe(4);
-  });
-
   it("has sound enabled by default", () => {
     expect(DEFAULT_TIMER_SETTINGS.soundEnabled).toBe(true);
   });

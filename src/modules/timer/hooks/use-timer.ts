@@ -10,42 +10,92 @@ import type {
   TimerSettings,
   CompletedSession,
 } from "../types";
+import type { TimerMode } from "@/shared/types";
 
-// Play a short beep sound using the Web Audio API.
-// Creates a temporary AudioContext, plays a tone, then closes it to avoid memory leaks.
+export interface TimerLogEntry {
+  startedAt: string;
+  endedAt: string;
+  durationSeconds: number;
+}
+
+// Callback the host provides so completed task-tied sessions go through the
+// board's synced mutation path (which fans out to Supabase) instead of a
+// localStorage-only write that diverges from the provider state.
+export type LogTimeCallback = (taskId: string, entry: TimerLogEntry) => void;
+
+// Callback the host provides so every completed session lands in the
+// SessionsProvider (which syncs to Supabase and clears on auth change).
+export type SessionCompleteCallback = (session: CompletedSession) => void;
+
+export interface PendingSavePrompt {
+  startedAt: string;
+  endedAt: string;
+  durationMs: number;
+  mode: TimerMode;
+}
+
+// Play a notification using the Web Audio API.
+// Three short beeps over ~1.2 seconds — long enough to grab attention from across the room.
 function playNotificationSound() {
   try {
     const audioContext = new AudioContext();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+    const beepCount = 3;
+    const beepDuration = 0.18;
+    const beepGap = 0.22;
 
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+    for (let i = 0; i < beepCount; i++) {
+      const startAt = audioContext.currentTime + i * (beepDuration + beepGap);
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
 
-    oscillator.frequency.value = 800;
-    oscillator.type = "sine";
-    gainNode.gain.value = 0.3;
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
 
-    oscillator.start();
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.2);
-    oscillator.stop(audioContext.currentTime + 0.2);
+      oscillator.frequency.value = 880;
+      oscillator.type = "sine";
+      gainNode.gain.setValueAtTime(0.3, startAt);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, startAt + beepDuration);
 
-    // Close the AudioContext after the sound finishes to prevent memory leaks
-    oscillator.addEventListener("ended", () => {
-      audioContext.close();
-    });
+      oscillator.start(startAt);
+      oscillator.stop(startAt + beepDuration);
+    }
+
+    // Close the context after the last beep finishes
+    const totalDuration = beepCount * beepDuration + (beepCount - 1) * beepGap;
+    setTimeout(() => audioContext.close(), Math.ceil(totalDuration * 1000) + 100);
   } catch {
     // Audio may not be available — that's fine, just skip
   }
 }
 
-export function useTimer(settings: TimerSettings) {
+export function useTimer(
+  settings: TimerSettings,
+  activeTaskId?: string | null,
+  onLogTime?: LogTimeCallback,
+  onSessionComplete?: SessionCompleteCallback,
+) {
+  const activeTaskIdRef = useRef<string | null>(activeTaskId ?? null);
+  useEffect(() => {
+    activeTaskIdRef.current = activeTaskId ?? null;
+  }, [activeTaskId]);
+
+  const onLogTimeRef = useRef(onLogTime);
+  useEffect(() => {
+    onLogTimeRef.current = onLogTime;
+  }, [onLogTime]);
+
+  const onSessionCompleteRef = useRef(onSessionComplete);
+  useEffect(() => {
+    onSessionCompleteRef.current = onSessionComplete;
+  }, [onSessionComplete]);
   // --- State ---
   const [timerState, setTimerState] = useState<TimerState>("idle");
   const [elapsed, setElapsed] = useState(0);
   const [currentCycle, setCurrentCycle] = useState(1);
   const [isBreak, setIsBreak] = useState(false);
   const [showRecovery, setShowRecovery] = useState(false);
+  const [pendingSavePrompt, setPendingSavePrompt] =
+    useState<PendingSavePrompt | null>(null);
 
   // --- Refs ---
   const animationFrameRef = useRef<number | null>(null);
@@ -69,27 +119,16 @@ export function useTimer(settings: TimerSettings) {
   // --- localStorage persistence ---
   const [activeSession, setActiveSession] =
     useLocalStorage<TimerSession | null>(STORAGE_KEYS.ACTIVE_SESSION, null);
-  const [completedSessions, setCompletedSessions] = useLocalStorage<
-    CompletedSession[]
-  >(STORAGE_KEYS.COMPLETED_SESSIONS, []);
 
   // --- Computed values ---
   const getTargetDuration = useCallback(() => {
     const s = settingsRef.current;
-    if (isBreakRef.current) {
-      const isLongBreak = currentCycleRef.current > s.sessionsUntilLongBreak;
-      return minutesToMs(isLongBreak ? s.longBreakDuration : s.breakDuration);
-    }
-    return minutesToMs(s.focusDuration);
+    return minutesToMs(isBreakRef.current ? s.breakDuration : s.focusDuration);
   }, []);
 
-  const targetDuration = isBreak
-    ? minutesToMs(
-        currentCycle > settings.sessionsUntilLongBreak
-          ? settings.longBreakDuration
-          : settings.breakDuration
-      )
-    : minutesToMs(settings.focusDuration);
+  const targetDuration = minutesToMs(
+    isBreak ? settings.breakDuration : settings.focusDuration,
+  );
 
   const remaining =
     settings.mode === "pomodoro" ? Math.max(0, targetDuration - elapsed) : 0;
@@ -103,23 +142,52 @@ export function useTimer(settings: TimerSettings) {
     startTimeRef.current = null;
   }, []);
 
-  // --- Save a completed session ---
+  // --- Persist a session to localStorage (history + per-task time log).
+  const persistSession = useCallback(
+    (args: {
+      startedAt: string;
+      endedAt: string;
+      durationMs: number;
+      taskId?: string;
+      completed: boolean;
+      mode: TimerMode;
+    }) => {
+      const session: CompletedSession = {
+        startedAt: args.startedAt,
+        endedAt: args.endedAt,
+        duration: args.durationMs,
+        mode: args.mode,
+        completed: args.completed,
+        taskId: args.taskId,
+      };
+      onSessionCompleteRef.current?.(session);
+
+      if (args.taskId && onLogTimeRef.current) {
+        onLogTimeRef.current(args.taskId, {
+          startedAt: args.startedAt,
+          endedAt: args.endedAt,
+          durationSeconds: Math.round(args.durationMs / 1000),
+        });
+      }
+    },
+    [],
+  );
+
+  // --- Save a completed session (used by phase completion) ---
   const saveCompletedSession = useCallback(
     (completed: boolean) => {
       const currentElapsed = elapsedRef.current;
       if (currentElapsed < 1000) return;
-
-      const session: CompletedSession = {
+      persistSession({
         startedAt: new Date(Date.now() - currentElapsed).toISOString(),
         endedAt: new Date().toISOString(),
-        duration: currentElapsed,
-        mode: settingsRef.current.mode,
+        durationMs: currentElapsed,
+        taskId: activeTaskIdRef.current ?? undefined,
         completed,
-      };
-
-      setCompletedSessions((prev) => [...prev, session]);
+        mode: settingsRef.current.mode,
+      });
     },
-    [setCompletedSessions]
+    [persistSession],
   );
 
   // --- Pomodoro phase completion ---
@@ -131,11 +199,6 @@ export function useTimer(settings: TimerSettings) {
     }
 
     if (isBreakRef.current) {
-      const wasLongBreak =
-        currentCycleRef.current > settingsRef.current.sessionsUntilLongBreak;
-      if (wasLongBreak) {
-        setCurrentCycle(1);
-      }
       setIsBreak(false);
       setElapsed(0);
       pausedElapsedRef.current = 0;
@@ -159,14 +222,12 @@ export function useTimer(settings: TimerSettings) {
         setElapsed(newElapsed);
 
         const s = settingsRef.current;
-        const isLongBreak = nextCycle > s.sessionsUntilLongBreak;
-        const breakDur = minutesToMs(isLongBreak ? s.longBreakDuration : s.breakDuration);
+        const breakDur = minutesToMs(s.breakDuration);
         if (newElapsed >= breakDur) {
           cancelAnimationFrame(animationFrameRef.current!);
           animationFrameRef.current = null;
           startTimeRef.current = null;
           if (s.soundEnabled) playNotificationSound();
-          if (isLongBreak) setCurrentCycle(1);
           setIsBreak(false);
           setElapsed(0);
           pausedElapsedRef.current = 0;
@@ -239,6 +300,7 @@ export function useTimer(settings: TimerSettings) {
       mode: s.mode,
       timerState: "running",
       pausedElapsed: pausedElapsedRef.current,
+      taskId: activeTaskIdRef.current ?? undefined,
       pomodoroState:
         s.mode === "pomodoro"
           ? {
@@ -264,10 +326,68 @@ export function useTimer(settings: TimerSettings) {
 
   const stop = useCallback(() => {
     stopTicking();
-    saveCompletedSession(false);
-    setTimerState("completed");
+    const currentElapsed = elapsedRef.current;
+    const taskId = activeTaskIdRef.current;
+    const mode = settingsRef.current.mode;
+
+    // Auto-reset everything — stopping always returns the timer to idle.
     setActiveSession(null);
-  }, [stopTicking, saveCompletedSession]);
+    setTimerState("idle");
+    setElapsed(0);
+    pausedElapsedRef.current = 0;
+    setCurrentCycle(1);
+    setIsBreak(false);
+
+    if (currentElapsed < 1000) return;
+
+    const startedAt = new Date(Date.now() - currentElapsed).toISOString();
+    const endedAt = new Date().toISOString();
+
+    if (taskId) {
+      // Auto-save when a task was active.
+      persistSession({
+        startedAt,
+        endedAt,
+        durationMs: currentElapsed,
+        taskId,
+        completed: false,
+        mode,
+      });
+    } else {
+      // No task — ask the user whether to log this time and to which task.
+      setPendingSavePrompt({ startedAt, endedAt, durationMs: currentElapsed, mode });
+    }
+  }, [stopTicking, persistSession, setActiveSession]);
+
+  // Mirror pendingSavePrompt in a ref so confirmSaveSession can read the
+  // current value without a setState updater (updaters run during render,
+  // and persistSession triggers a setState on another component, which
+  // React forbids during render).
+  const pendingSavePromptRef = useRef<PendingSavePrompt | null>(null);
+  useEffect(() => {
+    pendingSavePromptRef.current = pendingSavePrompt;
+  }, [pendingSavePrompt]);
+
+  const confirmSaveSession = useCallback(
+    (taskId: string) => {
+      const current = pendingSavePromptRef.current;
+      if (!current) return;
+      persistSession({
+        startedAt: current.startedAt,
+        endedAt: current.endedAt,
+        durationMs: current.durationMs,
+        taskId,
+        completed: false,
+        mode: current.mode,
+      });
+      setPendingSavePrompt(null);
+    },
+    [persistSession],
+  );
+
+  const dismissSavePrompt = useCallback(() => {
+    setPendingSavePrompt(null);
+  }, []);
 
   const reset = useCallback(() => {
     stopTicking();
@@ -326,10 +446,10 @@ export function useTimer(settings: TimerSettings) {
       completed: false,
     };
 
-    setCompletedSessions((prev) => [...prev, session]);
+    onSessionCompleteRef.current?.(session);
     setActiveSession(null);
     setTimerState("idle");
-  }, [activeSession, setCompletedSessions]);
+  }, [activeSession, setActiveSession]);
 
   const dismissRecovery = useCallback(() => {
     setShowRecovery(false);
@@ -371,8 +491,8 @@ export function useTimer(settings: TimerSettings) {
     currentCycle,
     isBreak,
     targetDuration,
-    completedSessions,
     showRecovery,
+    pendingSavePrompt,
 
     start,
     pause,
@@ -383,5 +503,8 @@ export function useTimer(settings: TimerSettings) {
     resumeRecoveredSession,
     saveRecoveredSession,
     dismissRecovery,
+
+    confirmSaveSession,
+    dismissSavePrompt,
   };
 }

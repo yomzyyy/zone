@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/shared/components/theme-provider";
+import { AuthProvider } from "@/modules/auth/components/auth-provider";
+import { BoardProvider } from "@/modules/tasks/components/board-provider";
+import { SessionsProvider } from "@/modules/timer/components/sessions-provider";
+import { ActiveTimerChip } from "@/modules/timer/components/active-timer-chip";
 import { Footer } from "@/shared/components/layout/footer";
+import { Toaster } from "@/shared/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,10 +30,22 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex min-h-screen flex-col">
-            <main className="flex flex-1 flex-col">{children}</main>
-            <Footer />
-          </div>
+          <AuthProvider>
+            <BoardProvider>
+              <SessionsProvider>
+              <div className="flex h-dvh flex-col">
+                <main className="flex flex-1 flex-col overflow-hidden">
+                  {children}
+                </main>
+                <Footer />
+              </div>
+              {/* Zone Assistant is built but not ready for production —
+                  re-add <AssistantButton /> here when launching. */}
+              <ActiveTimerChip />
+              <Toaster />
+              </SessionsProvider>
+            </BoardProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
