@@ -1,9 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
+// Same placeholders as the browser client. Don't make the key look like a
+// JWT — secret scanners flag any JWT pattern in source control.
 const PLACEHOLDER_URL = "https://placeholder.supabase.co";
-const PLACEHOLDER_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBsYWNlaG9sZGVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDAwMDAwMDAsImV4cCI6MjAwMDAwMDAwMH0.zIZBb_vLqz7YFjP_YvKnRUvU8z9HxWp8mY5g9hQpJYI";
+const PLACEHOLDER_KEY = "missing-supabase-anon-key";
 
 export async function createClient() {
   const cookieStore = await cookies();
