@@ -59,7 +59,7 @@ export function ActiveTimerChip() {
     <button
       type="button"
       onClick={() => router.push("/")}
-      className="fixed top-4 right-4 z-40 inline-flex items-center gap-2 rounded-full border bg-background/90 px-3 py-1.5 text-sm font-medium shadow-md backdrop-blur transition-colors hover:bg-accent"
+      className="fixed top-3 right-3 z-40 inline-flex items-center gap-1.5 rounded-full border bg-background/90 px-2.5 py-1 text-xs font-medium shadow-md backdrop-blur transition-colors hover:bg-accent sm:top-4 sm:right-4 sm:gap-2 sm:px-3 sm:py-1.5 sm:text-sm"
       aria-label="Return to timer"
     >
       <Clock

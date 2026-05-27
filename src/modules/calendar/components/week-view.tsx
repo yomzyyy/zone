@@ -66,7 +66,9 @@ export function WeekView({
   }
 
   return (
-    <div className="grid flex-1 grid-cols-7 gap-2 min-h-0">
+    // On phones the 7 columns can't all fit at a usable width — let the
+    // whole row scroll horizontally and give each column a sensible minimum.
+    <div className="scrollbar-subtle grid flex-1 grid-flow-col auto-cols-[minmax(150px,1fr)] gap-2 overflow-x-auto min-h-0 md:grid-flow-row md:grid-cols-7 md:auto-cols-auto md:overflow-x-visible">
       {days.map((day, idx) => {
         const key = dateKey(day.date);
         const dayTasks = tasksByDate.get(key) ?? [];
@@ -104,9 +106,9 @@ export function WeekView({
                   key={task.id}
                   type="button"
                   onClick={() => onSelectTask(task)}
-                  className="shrink-0 space-y-1.5 rounded-lg bg-card p-2 text-left text-xs text-card-foreground ring-1 ring-foreground/10 transition-colors hover:ring-foreground/25"
+                  className="min-w-0 shrink-0 space-y-1.5 rounded-lg bg-card p-2 text-left text-xs text-card-foreground ring-1 ring-foreground/10 transition-colors hover:ring-foreground/25"
                 >
-                  <p className="font-medium leading-tight break-words">
+                  <p className="font-medium leading-tight break-words [overflow-wrap:anywhere]">
                     {task.title}
                   </p>
                   <PriorityBadge priority={task.priority} />

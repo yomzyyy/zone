@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,72 @@ interface TimerSettingsModalProps {
   onOpenChange: (open: boolean) => void;
   settings: TimerSettings;
   onUpdateSettings: (updates: Partial<TimerSettings>) => void;
+}
+
+// Local string state for numeric inputs so the user can clear / type
+// intermediate values without the field snapping back to a default.
+// Commits to the settings store only when a valid number is parsed.
+interface NumberFieldProps {
+  id: string;
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  fallback: number;
+  onCommit: (n: number) => void;
+}
+
+function NumberField({
+  id,
+  label,
+  value,
+  min,
+  max,
+  fallback,
+  onCommit,
+}: NumberFieldProps) {
+  const [draft, setDraft] = useState(String(value));
+
+  // Re-sync when the canonical value changes (e.g. settings loaded from
+  // storage or set elsewhere) so the field doesn't show stale text.
+  useEffect(() => {
+    setDraft(String(value));
+  }, [value]);
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        id={id}
+        type="number"
+        inputMode="numeric"
+        min={min}
+        max={max}
+        value={draft}
+        onChange={(e) => {
+          const next = e.target.value;
+          setDraft(next);
+          // Only commit when the typed value parses to a valid in-range
+          // integer. Empty / partial / out-of-range values stay local until
+          // the user finishes editing.
+          const parsed = parseInt(next, 10);
+          if (!Number.isNaN(parsed) && parsed >= min && parsed <= max) {
+            onCommit(parsed);
+          }
+        }}
+        onBlur={() => {
+          // On blur, snap to a sensible value: if empty/invalid use fallback,
+          // otherwise clamp into range.
+          const parsed = parseInt(draft, 10);
+          const finalValue = Number.isNaN(parsed)
+            ? fallback
+            : clamp(parsed, min, max);
+          setDraft(String(finalValue));
+          onCommit(finalValue);
+        }}
+      />
+    </div>
+  );
 }
 
 // The settings modal — opened by clicking the gear button.
@@ -71,38 +138,25 @@ export function TimerSettingsModal({
           {/* Pomodoro settings — only show when pomodoro mode is selected */}
           {settings.mode === "pomodoro" && (
             <>
-              <div className="space-y-2">
-                <Label htmlFor="focus-duration">Focus Duration (minutes)</Label>
-                <Input
-                  id="focus-duration"
-                  type="number"
-                  min={1}
-                  max={120}
-                  value={settings.focusDuration}
-                  onChange={(e) =>
-                    onUpdateSettings({
-                      focusDuration: clamp(parseInt(e.target.value) || 25, 1, 120),
-                    })
-                  }
-                />
-              </div>
+              <NumberField
+                id="focus-duration"
+                label="Focus Duration (minutes)"
+                value={settings.focusDuration}
+                min={1}
+                max={120}
+                fallback={25}
+                onCommit={(n) => onUpdateSettings({ focusDuration: n })}
+              />
 
-              <div className="space-y-2">
-                <Label htmlFor="break-duration">Break Duration (minutes)</Label>
-                <Input
-                  id="break-duration"
-                  type="number"
-                  min={1}
-                  max={30}
-                  value={settings.breakDuration}
-                  onChange={(e) =>
-                    onUpdateSettings({
-                      breakDuration: clamp(parseInt(e.target.value) || 5, 1, 30),
-                    })
-                  }
-                />
-              </div>
-
+              <NumberField
+                id="break-duration"
+                label="Break Duration (minutes)"
+                value={settings.breakDuration}
+                min={1}
+                max={30}
+                fallback={5}
+                onCommit={(n) => onUpdateSettings({ breakDuration: n })}
+              />
             </>
           )}
 

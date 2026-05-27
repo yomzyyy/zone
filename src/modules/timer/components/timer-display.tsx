@@ -12,7 +12,7 @@ export function TimerDisplay({ elapsed, remaining, mode }: TimerDisplayProps) {
 
   return (
     <div className="select-none">
-      <h1 className="text-8xl font-bold tracking-tight tabular-nums md:text-9xl">
+      <h1 className="text-5xl font-bold tracking-tight tabular-nums sm:text-7xl md:text-8xl lg:text-9xl">
         {formatTime(displayTime)}
       </h1>
     </div>

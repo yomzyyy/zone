@@ -60,7 +60,7 @@ export function NavTabs({ activeTab, onTabChange }: NavTabsProps) {
             }}
             onClick={() => onTabChange(item.id)}
             className={cn(
-              "relative z-10 rounded-full px-4 py-2 text-sm font-medium transition-colors duration-200",
+              "relative z-10 rounded-full px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 sm:px-4 sm:py-2 sm:text-sm",
               isActive
                 ? "text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground",

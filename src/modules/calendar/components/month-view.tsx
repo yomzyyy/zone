@@ -78,7 +78,7 @@ export function MonthView({
               key={key}
               data-day-cell
               className={cn(
-                "relative flex min-h-[80px] cursor-pointer flex-col gap-1 border-b border-r p-1 transition-colors",
+                "relative flex min-h-[64px] cursor-pointer flex-col gap-1 border-b border-r p-1 transition-colors sm:min-h-[80px]",
                 "hover:bg-card/40",
                 !day.inCurrentMonth && "bg-muted/20 text-muted-foreground",
               )}

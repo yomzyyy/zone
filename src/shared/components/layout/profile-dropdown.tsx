@@ -41,15 +41,17 @@ export function ProfileDropdown() {
 
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{displayName}</p>
+          <div className="flex min-w-0 flex-col space-y-1">
+            <p className="truncate text-sm font-medium leading-none">
+              {displayName}
+            </p>
             {isAuthenticated && user?.email && (
-              <p className="text-xs leading-none text-muted-foreground">
+              <p className="truncate text-xs leading-none text-muted-foreground">
                 {user.email}
               </p>
             )}
             {!isAuthenticated && (
-              <p className="text-xs leading-none text-muted-foreground">
+              <p className="truncate text-xs leading-none text-muted-foreground">
                 Guest
               </p>
             )}

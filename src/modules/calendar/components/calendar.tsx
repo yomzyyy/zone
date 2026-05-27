@@ -34,7 +34,7 @@ export function Calendar({ runningTaskId, onEnterZone }: CalendarProps) {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 overflow-hidden">
+    <div className="flex flex-1 flex-col gap-3 p-3 overflow-hidden sm:gap-4 sm:p-4">
       <CalendarHeader
         view={calendar.view}
         reference={calendar.reference}

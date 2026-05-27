@@ -126,11 +126,26 @@ export function BoardProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, user]);
 
   // When authenticated, the DB is the source of truth — fetch on first
-  // signed-in mount and replace local state.
+  // signed-in mount and replace local state. On sign-out (user transitions
+  // to null) we reset to INITIAL_STATE so the previous user's board doesn't
+  // bleed into a fresh guest session on a shared browser.
   const hydratedForUserRef = useRef<string | null>(null);
+  const lastUserIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (authLoading) return;
-    if (!sync) return;
+
+    const currentUserId = sync?.userId ?? null;
+    if (currentUserId === lastUserIdRef.current) return;
+    lastUserIdRef.current = currentUserId;
+
+    if (!sync) {
+      // Signed out (or never signed in this session). Reset in-memory state
+      // so the next view doesn't show the prior user's tasks.
+      setState(INITIAL_STATE);
+      hydratedForUserRef.current = null;
+      return;
+    }
+
     if (hydratedForUserRef.current === sync.userId) return;
     hydratedForUserRef.current = sync.userId;
 
@@ -223,21 +238,28 @@ export function BoardProvider({ children }: { children: ReactNode }) {
 
   const toggleTaskComplete = useCallback(
     (taskId: string) => {
+      let newCompleted: boolean | null = null;
       setState((prev) => ({
         ...prev,
-        tasks: prev.tasks.map((task) =>
-          task.id === taskId
-            ? {
-                ...task,
-                completed: !task.completed,
-                updatedAt: new Date().toISOString(),
-              }
-            : task,
-        ),
+        tasks: prev.tasks.map((task) => {
+          if (task.id !== taskId) return task;
+          newCompleted = !task.completed;
+          return {
+            ...task,
+            completed: newCompleted,
+            updatedAt: new Date().toISOString(),
+          };
+        }),
       }));
-      // The DB schema doesn't store `completed` per task — local-only.
+
+      if (sync && newCompleted !== null) {
+        fireAndForget(
+          "toggleTaskComplete",
+          updateTaskRow(sync.supabase, taskId, { completed: newCompleted }),
+        );
+      }
     },
-    [setState],
+    [setState, sync],
   );
 
   const updateTask = useCallback(

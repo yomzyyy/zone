@@ -42,7 +42,8 @@ export async function POST(request: Request) {
   // Hard-disable: feature isn't shipped yet. Removing the UI entry point in
   // layout is the primary gate; this is the second layer in case a stale
   // client still has the panel cached.
-  if (process.env.ASSISTANT_ENABLED !== "true") {
+  const enabledRaw = (process.env.ASSISTANT_ENABLED ?? "").toLowerCase();
+  if (enabledRaw !== "true" && enabledRaw !== "1") {
     return NextResponse.json(
       { error: "Zone Assistant is not available yet." },
       { status: 503 },

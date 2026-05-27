@@ -37,6 +37,13 @@ export async function migrateGuestData(
     return { tasksMigrated: 0, sessionsMigrated: 0, skipped: true };
   }
 
+  // Set the flag IMMEDIATELY (best-effort). If the migration crashes mid-way
+  // (network drop, browser closed), re-mounting won't replay the loop and
+  // double-insert tags/tasks. The cost is that a partial migration leaves
+  // some local data orphaned — but that's strictly better than duplicates,
+  // and re-mounting fetches the canonical server state anyway.
+  window.localStorage.setItem(MIGRATION_FLAG, new Date().toISOString());
+
   await ensureDefaultColumns(supabase, userId);
 
   const board = readJSON<BoardState>(TASKS_STORAGE_KEY, {
@@ -91,6 +98,7 @@ export async function migrateGuestData(
         priority: task.priority,
         due_date: task.dueDate,
         position: task.position,
+        completed: task.completed,
       })
       .select("id")
       .single();
@@ -138,6 +146,5 @@ export async function migrateGuestData(
     sessionsMigrated += rows.length;
   }
 
-  window.localStorage.setItem(MIGRATION_FLAG, new Date().toISOString());
   return { tasksMigrated, sessionsMigrated, skipped: false };
 }

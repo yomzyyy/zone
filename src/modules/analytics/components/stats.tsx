@@ -30,30 +30,30 @@ export function Stats() {
   const top = useMemo(() => computeTopTasks(board.tasks), [board.tasks]);
 
   return (
-    <div className="flex w-full flex-1 flex-col gap-6 p-4 md:p-6 lg:p-8">
+    <div className="flex w-full flex-1 flex-col gap-4 p-3 sm:gap-6 sm:p-4 md:p-6 lg:p-8 overflow-y-auto scrollbar-subtle">
       <div>
-        <h1 className="text-2xl font-bold">Your Zone Stats</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-xl font-bold sm:text-2xl">Your Zone Stats</h1>
+        <p className="text-xs text-muted-foreground sm:text-sm">
           Time, sessions, and the patterns behind your focus
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
-        <Card className="p-4 space-y-1">
+        <Card className="p-3 space-y-1 sm:p-4">
           <p className="text-xs uppercase text-muted-foreground">Today</p>
-          <p className="text-xl font-bold">{formatMs(totals.todayMs)}</p>
+          <p className="text-lg font-bold tabular-nums sm:text-xl">{formatMs(totals.todayMs)}</p>
           <p className="text-xs text-muted-foreground">
             {totals.todaySessions} session{totals.todaySessions === 1 ? "" : "s"}
           </p>
         </Card>
-        <Card className="p-4 space-y-1">
+        <Card className="p-3 space-y-1 sm:p-4">
           <p className="text-xs uppercase text-muted-foreground">This week</p>
           <p className="text-xl font-bold">{formatMs(totals.weekMs)}</p>
           <p className="text-xs text-muted-foreground">
             {totals.weekSessions} session{totals.weekSessions === 1 ? "" : "s"}
           </p>
         </Card>
-        <Card className="p-4 space-y-1">
+        <Card className="p-3 space-y-1 sm:p-4">
           <p className="text-xs uppercase text-muted-foreground">This month</p>
           <p className="text-xl font-bold">{formatMs(totals.monthMs)}</p>
           <p className="text-xs text-muted-foreground">
@@ -61,24 +61,24 @@ export function Stats() {
             {totals.monthSessions === 1 ? "" : "s"}
           </p>
         </Card>
-        <Card className="p-4 space-y-1">
+        <Card className="p-3 space-y-1 sm:p-4">
           <p className="text-xs uppercase text-muted-foreground">Streak</p>
-          <p className="text-xl font-bold flex items-center gap-1.5">
+          <p className="text-xl font-bold tabular-nums flex items-center gap-1.5">
             <Flame className="h-5 w-5 text-orange-400" />
             {streak} day{streak === 1 ? "" : "s"}
           </p>
           <p className="text-xs text-muted-foreground">5+ minutes per day</p>
         </Card>
-        <Card className="p-4 space-y-1">
+        <Card className="p-3 space-y-1 sm:p-4">
           <p className="text-xs uppercase text-muted-foreground">
             Avg session
           </p>
-          <p className="text-xl font-bold">
+          <p className="text-xl font-bold tabular-nums">
             {avg === 0 ? "—" : formatMs(avg)}
           </p>
           <p className="text-xs text-muted-foreground">across all sessions</p>
         </Card>
-        <Card className="p-4 space-y-1">
+        <Card className="p-3 space-y-1 sm:p-4">
           <p className="text-xs uppercase text-muted-foreground">
             Most productive
           </p>

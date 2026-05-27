@@ -22,7 +22,9 @@ export function TagChip({
   className,
 }: TagChipProps) {
   const baseClass = cn(
-    "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs",
+    // max-w-full + min-w-0 + truncate inside lets long names shrink instead of
+    // stretching whatever flex/grid container the chip sits in.
+    "inline-flex max-w-full min-w-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs",
     onClick && "cursor-pointer hover:opacity-80",
     active && "ring-2 ring-offset-1 ring-offset-background",
     className,
@@ -56,7 +58,7 @@ export function TagChip({
         style={baseStyle}
         aria-pressed={active ? true : undefined}
       >
-        <span>{tag.name}</span>
+        <span className="min-w-0 truncate">{tag.name}</span>
         {removeButton}
       </button>
     );

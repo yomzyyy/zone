@@ -18,6 +18,7 @@ interface TaskRow {
   priority: Priority;
   due_date: string | null;
   position: number;
+  completed: boolean | null;
   created_at: string;
   updated_at: string;
 }
@@ -50,7 +51,10 @@ function rowToTask(row: TaskRow, tagIds: string[]): Task {
     tagIds,
     position: row.position,
     timeLog: [],
-    completed: row.status === "done",
+    // Prefer the explicit DB column; fall back to status==="done" for rows
+    // written before migration 0006 (the backfill should have covered them,
+    // but the fallback keeps us safe if a single row slips through).
+    completed: row.completed ?? row.status === "done",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -159,6 +163,7 @@ export async function insertTaskRow(
     priority: task.priority,
     due_date: task.dueDate,
     position: task.position,
+    completed: task.completed,
   });
   if (error) throw error;
 
@@ -180,6 +185,7 @@ export async function updateTaskRow(
     due_date?: string | null;
     column_id?: string;
     position?: number;
+    completed?: boolean;
   },
 ) {
   const { error } = await supabase.from("tasks").update(patch).eq("id", taskId);
@@ -315,13 +321,15 @@ export async function insertTimeLogRow(
   if (error) throw error;
 }
 
+// _userId is kept in the signature for callsite clarity but unused — the
+// RPC now derives the target user from auth.uid() server-side (locked down
+// in migration 0005). This prevents one user from seeding columns onto
+// another user's board.
 export async function ensureDefaultColumns(
   supabase: SupabaseClient,
-  userId: string,
+  _userId: string,
 ) {
-  const { error } = await supabase.rpc("seed_default_columns", {
-    target_user: userId,
-  });
+  const { error } = await supabase.rpc("seed_default_columns");
   if (error && !error.message.includes("does not exist")) {
     throw error;
   }

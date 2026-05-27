@@ -18,6 +18,7 @@ import {
 import { Plus, Search, X } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 import { Input } from "@/shared/components/ui/input";
+import { cn } from "@/shared/utils/utils";
 import { useBoard } from "../hooks/use-board";
 import type { Tag, Task } from "../types";
 import { tasksInColumn } from "../utils";
@@ -177,19 +178,19 @@ export function Board({ runningTaskId, onEnterZone }: BoardProps) {
     : null;
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 min-h-0 min-w-0">
+    <div className="flex flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4 min-h-0 min-w-0">
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" onClick={handleAddColumn}>
           <Plus className="h-4 w-4" />
           Add column
         </Button>
-        <div className="relative flex-1 max-w-sm ml-auto">
+        <div className="relative w-full sm:flex-1 sm:max-w-sm sm:ml-auto">
           <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search tasks..."
-            className="pl-8"
+            className={cn("pl-8", search && "pr-8")}
           />
           {search && (
             <button

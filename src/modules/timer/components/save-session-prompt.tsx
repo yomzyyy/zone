@@ -119,13 +119,9 @@ export function SaveSessionPrompt({
                   <SelectTrigger id="save-pick-existing" className="w-full">
                     <SelectValue placeholder="Select a task..." />
                   </SelectTrigger>
-                  <SelectContent className="w-[var(--radix-select-trigger-width)] max-w-[var(--radix-select-trigger-width)]">
+                  <SelectContent>
                     {sortedOpenTasks.map((task) => (
-                      <SelectItem
-                        key={task.id}
-                        value={task.id}
-                        className="whitespace-normal break-all [overflow-wrap:anywhere]"
-                      >
+                      <SelectItem key={task.id} value={task.id}>
                         {task.title}
                       </SelectItem>
                     ))}

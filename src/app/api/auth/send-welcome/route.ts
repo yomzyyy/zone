@@ -30,7 +30,10 @@ export async function POST(request: Request) {
   }
 
   const resend = new Resend(apiKey);
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://zone.app";
+  // Default to the request's own origin if NEXT_PUBLIC_APP_URL isn't set —
+  // never point at a domain we don't control.
+  const requestOrigin = new URL(request.url).origin;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? requestOrigin;
 
   try {
     await resend.emails.send({

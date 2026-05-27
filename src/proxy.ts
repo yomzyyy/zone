@@ -31,7 +31,13 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  // Network errors from Supabase shouldn't 500 every request — fall back
+  // to the response with whatever cookies are already present.
+  try {
+    await supabase.auth.getUser();
+  } catch {
+    /* swallow — auth provider on the client will retry */
+  }
 
   return supabaseResponse;
 }

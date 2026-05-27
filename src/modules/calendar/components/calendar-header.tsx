@@ -147,7 +147,7 @@ export function CalendarHeader({
           <button
             type="button"
             onClick={() => setPickerOpen((v) => !v)}
-            className="rounded-md px-2 py-1 text-lg font-semibold hover:bg-accent transition-colors"
+            className="rounded-md px-2 py-1 text-base font-semibold hover:bg-accent transition-colors sm:text-lg"
             aria-haspopup="dialog"
             aria-expanded={pickerOpen}
           >
