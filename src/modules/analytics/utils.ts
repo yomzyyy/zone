@@ -178,10 +178,6 @@ export function computeWeeklyChart(
   return buckets;
 }
 
-// ============================================================
-// Activity chart — used by the Day/Week/Month chart on Stats.
-// ============================================================
-
 export interface ChartBar {
   label: string;
   totalMs: number;

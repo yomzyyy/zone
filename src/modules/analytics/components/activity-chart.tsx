@@ -54,8 +54,6 @@ const FULL_MONTH_LABELS = [
 
 const WEEKDAY_INITIALS = ["S", "M", "T", "W", "T", "F", "S"];
 
-// Build a 6-row calendar grid (42 cells) for the given year/month, padded with
-// leading/trailing days from neighboring months — same shape as a typical date picker.
 function buildCalendarGrid(year: number, month: number): Date[] {
   const firstOfMonth = new Date(year, month, 1);
   const start = new Date(firstOfMonth);
@@ -77,8 +75,6 @@ function isSameDayLocal(a: Date, b: Date) {
   );
 }
 
-// SVG view box — chart is drawn into a virtual 1000x300 grid and scaled to
-// whatever size its container ends up. Padding keeps points off the edges.
 const VB_W = 1000;
 const VB_H = 300;
 const PAD_X = 12;
@@ -98,7 +94,6 @@ export function ActivityChart({ sessions }: ActivityChartProps) {
   const pickerRef = useRef<HTMLDivElement>(null);
   const lastNavAt = useRef(0);
 
-  // Sync the picker to whatever the chart is currently showing each time it opens.
   useEffect(() => {
     if (pickerOpen) {
       setPickerYear(reference.getFullYear());
@@ -140,8 +135,6 @@ export function ActivityChart({ sessions }: ActivityChartProps) {
     setPickerOpen(false);
   }
 
-  // Step the picker's *internal* month independently of the chart's reference,
-  // so users can browse around without committing.
   function stepPickerMonth(delta: number) {
     setPickerMonth((m) => {
       const next = m + delta;
@@ -229,11 +222,9 @@ export function ActivityChart({ sessions }: ActivityChartProps) {
     });
   }, [view, reference]);
 
-  // Thin out tick labels for dense views.
   const labelStride =
     view === "day" ? 3 : view === "month" ? bars.length > 20 ? 5 : 1 : 1;
 
-  // Convert bar index -> X coordinate inside the SVG viewBox.
   function xAt(i: number) {
     if (bars.length <= 1) return VB_W / 2;
     const inner = VB_W - PAD_X * 2;
@@ -245,7 +236,6 @@ export function ActivityChart({ sessions }: ActivityChartProps) {
     return PAD_TOP + inner - ratio * inner;
   }
 
-  // Build line path + filled area below it.
   const linePath = bars
     .map((b, i) => `${i === 0 ? "M" : "L"} ${xAt(i)} ${yAt(b.totalMs)}`)
     .join(" ");
@@ -503,7 +493,6 @@ export function ActivityChart({ sessions }: ActivityChartProps) {
               </linearGradient>
             </defs>
 
-            {/* Faint baseline */}
             <line
               x1={PAD_X}
               x2={VB_W - PAD_X}
@@ -514,14 +503,12 @@ export function ActivityChart({ sessions }: ActivityChartProps) {
               vectorEffect="non-scaling-stroke"
             />
 
-            {/* Filled area below the line */}
             <path
               d={areaPath}
               fill="url(#activity-area)"
               className="text-foreground"
             />
 
-            {/* The line itself */}
             <path
               d={linePath}
               fill="none"
@@ -532,7 +519,6 @@ export function ActivityChart({ sessions }: ActivityChartProps) {
               className="stroke-foreground"
             />
 
-            {/* Points — only draw circles where there's data, plus today */}
             {bars.map((bar, i) => {
               const cx = xAt(i);
               const cy = yAt(bar.totalMs);
@@ -556,7 +542,6 @@ export function ActivityChart({ sessions }: ActivityChartProps) {
               );
             })}
 
-            {/* Invisible hit-test rects so hover works on the whole column */}
             {bars.map((_, i) => {
               const colW = (VB_W - PAD_X * 2) / Math.max(bars.length - 1, 1);
               const cx = xAt(i);
@@ -574,7 +559,6 @@ export function ActivityChart({ sessions }: ActivityChartProps) {
             })}
           </svg>
 
-          {/* Tooltip — positioned via percentages so it tracks the viewBox */}
           {hoverIdx !== null && bars[hoverIdx] && bars[hoverIdx].totalMs > 0 && (
             <div
               className="pointer-events-none absolute -translate-x-1/2 -translate-y-full whitespace-nowrap rounded bg-popover px-2 py-0.5 text-[10px] text-popover-foreground ring-1 ring-foreground/10 z-10"

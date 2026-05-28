@@ -3,10 +3,6 @@
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 
-// Back button used by the signup / login / verify pages. Uses browser history
-// (router.back) so it returns to wherever the user came from — not always home.
-// Falls back to "/" when there's no history (e.g. user opened the page directly
-// in a fresh tab) so we don't leave them with a no-op button.
 export function BackToHome() {
   const router = useRouter();
 

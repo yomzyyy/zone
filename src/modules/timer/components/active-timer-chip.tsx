@@ -6,18 +6,12 @@ import { Clock } from "lucide-react";
 import { STORAGE_KEYS } from "../constants";
 import type { TimerSession } from "../types";
 
-// Floating chip shown on every page (except the home page, where the full
-// timer is already visible) when there's a running or paused session. Lets
-// users navigate the app without losing sight of the running timer.
 export function ActiveTimerChip() {
   const router = useRouter();
   const pathname = usePathname();
   const [session, setSession] = useState<TimerSession | null>(null);
   const [now, setNow] = useState(() => Date.now());
 
-  // Read the session from localStorage and re-read every second. Cheap because
-  // the chip exists for at most a few minutes per session, and avoids needing
-  // a context to share state with the timer hook.
   useEffect(() => {
     function read() {
       try {

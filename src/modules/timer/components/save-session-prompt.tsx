@@ -47,7 +47,6 @@ export function SaveSessionPrompt({
   const [pickedTaskId, setPickedTaskId] = useState<string>("");
   const [newTaskTitle, setNewTaskTitle] = useState<string>("");
 
-  // Reset the picker UI each time a fresh prompt opens.
   useEffect(() => {
     if (prompt) {
       setShowPicker(false);
@@ -56,8 +55,6 @@ export function SaveSessionPrompt({
     }
   }, [prompt]);
 
-  // Picking an existing task and typing a new name are mutually exclusive —
-  // keep them in sync so the Save button knows which path to take.
   function handlePickTask(value: string) {
     setPickedTaskId(value);
     if (value) setNewTaskTitle("");

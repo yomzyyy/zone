@@ -6,7 +6,6 @@ interface TimerDisplayProps {
   mode: "stopwatch" | "pomodoro";
 }
 
-// The big timer digits in the center of the screen.
 export function TimerDisplay({ elapsed, remaining, mode }: TimerDisplayProps) {
   const displayTime = mode === "pomodoro" ? remaining : elapsed;
 

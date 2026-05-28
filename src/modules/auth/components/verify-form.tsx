@@ -24,8 +24,6 @@ export function VerifyForm() {
     inputRefs.current[0]?.focus();
   }, []);
 
-  // Tick the cooldown countdown once a second. Source of truth is the
-  // localStorage timestamp so refreshing the page can't bypass the cooldown.
   useEffect(() => {
     function recompute() {
       const until = Number(
@@ -130,8 +128,6 @@ export function VerifyForm() {
     localStorage.removeItem(AUTH_STORAGE_KEYS.PENDING_EMAIL);
     localStorage.removeItem(AUTH_STORAGE_KEYS.PENDING_NAME);
 
-    // Best-effort welcome email — fire-and-forget so a Resend hiccup doesn't
-    // block the user from entering the app.
     fetch("/api/auth/send-welcome", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

@@ -18,13 +18,8 @@ export interface TimerLogEntry {
   durationSeconds: number;
 }
 
-// Callback the host provides so completed task-tied sessions go through the
-// board's synced mutation path (which fans out to Supabase) instead of a
-// localStorage-only write that diverges from the provider state.
 export type LogTimeCallback = (taskId: string, entry: TimerLogEntry) => void;
 
-// Callback the host provides so every completed session lands in the
-// SessionsProvider (which syncs to Supabase and clears on auth change).
 export type SessionCompleteCallback = (session: CompletedSession) => void;
 
 export interface PendingSavePrompt {
@@ -34,8 +29,6 @@ export interface PendingSavePrompt {
   mode: TimerMode;
 }
 
-// Play a notification using the Web Audio API.
-// Three short beeps over ~1.2 seconds — long enough to grab attention from across the room.
 function playNotificationSound() {
   try {
     const audioContext = new AudioContext();
@@ -60,11 +53,9 @@ function playNotificationSound() {
       oscillator.stop(startAt + beepDuration);
     }
 
-    // Close the context after the last beep finishes
     const totalDuration = beepCount * beepDuration + (beepCount - 1) * beepGap;
     setTimeout(() => audioContext.close(), Math.ceil(totalDuration * 1000) + 100);
   } catch {
-    // Audio may not be available — that's fine, just skip
   }
 }
 
@@ -88,7 +79,6 @@ export function useTimer(
   useEffect(() => {
     onSessionCompleteRef.current = onSessionComplete;
   }, [onSessionComplete]);
-  // --- State ---
   const [timerState, setTimerState] = useState<TimerState>("idle");
   const [elapsed, setElapsed] = useState(0);
   const [currentCycle, setCurrentCycle] = useState(1);
@@ -97,30 +87,25 @@ export function useTimer(
   const [pendingSavePrompt, setPendingSavePrompt] =
     useState<PendingSavePrompt | null>(null);
 
-  // --- Refs ---
   const animationFrameRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
   const pausedElapsedRef = useRef(0);
 
-  // Refs that mirror state — so callbacks always read the latest value
   const timerStateRef = useRef<TimerState>("idle");
   const isBreakRef = useRef(false);
   const currentCycleRef = useRef(1);
   const elapsedRef = useRef(0);
   const settingsRef = useRef(settings);
 
-  // Keep refs in sync with state
   useEffect(() => { timerStateRef.current = timerState; }, [timerState]);
   useEffect(() => { isBreakRef.current = isBreak; }, [isBreak]);
   useEffect(() => { currentCycleRef.current = currentCycle; }, [currentCycle]);
   useEffect(() => { elapsedRef.current = elapsed; }, [elapsed]);
   useEffect(() => { settingsRef.current = settings; }, [settings]);
 
-  // --- localStorage persistence ---
   const [activeSession, setActiveSession] =
     useLocalStorage<TimerSession | null>(STORAGE_KEYS.ACTIVE_SESSION, null);
 
-  // --- Computed values ---
   const getTargetDuration = useCallback(() => {
     const s = settingsRef.current;
     return minutesToMs(isBreakRef.current ? s.breakDuration : s.focusDuration);
@@ -133,7 +118,6 @@ export function useTimer(
   const remaining =
     settings.mode === "pomodoro" ? Math.max(0, targetDuration - elapsed) : 0;
 
-  // --- Stop the animation loop ---
   const stopTicking = useCallback(() => {
     if (animationFrameRef.current !== null) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -142,7 +126,6 @@ export function useTimer(
     startTimeRef.current = null;
   }, []);
 
-  // --- Persist a session to localStorage (history + per-task time log).
   const persistSession = useCallback(
     (args: {
       startedAt: string;
@@ -173,7 +156,6 @@ export function useTimer(
     [],
   );
 
-  // --- Save a completed session (used by phase completion) ---
   const saveCompletedSession = useCallback(
     (completed: boolean) => {
       const currentElapsed = elapsedRef.current;
@@ -190,7 +172,6 @@ export function useTimer(
     [persistSession],
   );
 
-  // --- Pomodoro phase completion ---
   const handlePhaseComplete = useCallback(() => {
     stopTicking();
 
@@ -205,16 +186,26 @@ export function useTimer(
       setTimerState("idle");
       setActiveSession(null);
     } else {
-      const nextCycle = currentCycleRef.current + 1;
+      const justFinishedCycle = currentCycleRef.current;
+      const cyclesTarget = settingsRef.current.cyclesTarget;
+      saveCompletedSession(true);
+      if (justFinishedCycle >= cyclesTarget) {
+        setElapsed(0);
+        pausedElapsedRef.current = 0;
+        setCurrentCycle(1);
+        setIsBreak(false);
+        setTimerState("idle");
+        setActiveSession(null);
+        return;
+      }
+
+      const nextCycle = justFinishedCycle + 1;
       setCurrentCycle(nextCycle);
       setIsBreak(true);
       setElapsed(0);
       pausedElapsedRef.current = 0;
       setTimerState("break");
 
-      saveCompletedSession(true);
-
-      // Auto-start break timer
       startTimeRef.current = Date.now();
       const tickFn = () => {
         if (startTimeRef.current === null) return;
@@ -254,7 +245,6 @@ export function useTimer(
     }
   }, [stopTicking, saveCompletedSession, setActiveSession]);
 
-  // --- The tick function ---
   const tick = useCallback(() => {
     if (startTimeRef.current === null) return;
 
@@ -273,13 +263,10 @@ export function useTimer(
     animationFrameRef.current = requestAnimationFrame(tick);
   }, [getTargetDuration, handlePhaseComplete]);
 
-  // --- Start the animation loop ---
   const startTicking = useCallback(() => {
     startTimeRef.current = Date.now();
     animationFrameRef.current = requestAnimationFrame(tick);
   }, [tick]);
-
-  // --- Public controls ---
 
   const start = useCallback(() => {
     const currentState = timerStateRef.current;
@@ -320,7 +307,14 @@ export function useTimer(
     setTimerState("paused");
 
     setActiveSession((prev) =>
-      prev ? { ...prev, timerState: "paused", pausedElapsed: currentElapsed } : null
+      prev
+        ? {
+            ...prev,
+            timerState: "paused",
+            pausedElapsed: currentElapsed,
+            pausedByClose: false,
+          }
+        : null,
     );
   }, [stopTicking, setActiveSession]);
 
@@ -330,7 +324,6 @@ export function useTimer(
     const taskId = activeTaskIdRef.current;
     const mode = settingsRef.current.mode;
 
-    // Auto-reset everything — stopping always returns the timer to idle.
     setActiveSession(null);
     setTimerState("idle");
     setElapsed(0);
@@ -344,7 +337,6 @@ export function useTimer(
     const endedAt = new Date().toISOString();
 
     if (taskId) {
-      // Auto-save when a task was active.
       persistSession({
         startedAt,
         endedAt,
@@ -354,15 +346,10 @@ export function useTimer(
         mode,
       });
     } else {
-      // No task — ask the user whether to log this time and to which task.
       setPendingSavePrompt({ startedAt, endedAt, durationMs: currentElapsed, mode });
     }
   }, [stopTicking, persistSession, setActiveSession]);
 
-  // Mirror pendingSavePrompt in a ref so confirmSaveSession can read the
-  // current value without a setState updater (updaters run during render,
-  // and persistSession triggers a setState on another component, which
-  // React forbids during render).
   const pendingSavePromptRef = useRef<PendingSavePrompt | null>(null);
   useEffect(() => {
     pendingSavePromptRef.current = pendingSavePrompt;
@@ -409,14 +396,14 @@ export function useTimer(
     setActiveSession(null);
   }, [stopTicking, setActiveSession]);
 
-  // --- Recovery ---
   const resumeRecoveredSession = useCallback(() => {
     if (!activeSession) return;
     setShowRecovery(false);
 
-    const sessionStart = new Date(activeSession.startedAt).getTime();
-    const totalElapsed =
-      activeSession.pausedElapsed + (Date.now() - sessionStart);
+    const totalElapsed = activeSession.pausedByClose
+      ? activeSession.pausedElapsed
+      : activeSession.pausedElapsed +
+        (Date.now() - new Date(activeSession.startedAt).getTime());
 
     pausedElapsedRef.current = totalElapsed;
     setElapsed(totalElapsed);
@@ -456,11 +443,13 @@ export function useTimer(
     setActiveSession(null);
   }, [setActiveSession]);
 
-  // --- Detect active session on page load ---
   useEffect(() => {
     if (!activeSession) return;
 
-    if (activeSession.timerState === "running") {
+    if (
+      activeSession.timerState === "running" ||
+      (activeSession.timerState === "paused" && activeSession.pausedByClose)
+    ) {
       setShowRecovery(true);
     } else if (activeSession.timerState === "paused") {
       pausedElapsedRef.current = activeSession.pausedElapsed;
@@ -475,12 +464,42 @@ export function useTimer(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // --- Cleanup on unmount ---
   useEffect(() => {
     return () => {
       if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    function freezeOnClose() {
+      const state = timerStateRef.current;
+      if (state !== "running" && state !== "break") return;
+      const elapsedNow =
+        pausedElapsedRef.current +
+        (startTimeRef.current ? Date.now() - startTimeRef.current : 0);
+      try {
+        const raw = window.localStorage.getItem(STORAGE_KEYS.ACTIVE_SESSION);
+        if (!raw) return;
+        const sess = JSON.parse(raw) as TimerSession;
+        window.localStorage.setItem(
+          STORAGE_KEYS.ACTIVE_SESSION,
+          JSON.stringify({
+            ...sess,
+            timerState: "paused",
+            pausedElapsed: elapsedNow,
+            pausedByClose: true,
+          }),
+        );
+      } catch {
+      }
+    }
+    window.addEventListener("pagehide", freezeOnClose);
+    window.addEventListener("beforeunload", freezeOnClose);
+    return () => {
+      window.removeEventListener("pagehide", freezeOnClose);
+      window.removeEventListener("beforeunload", freezeOnClose);
     };
   }, []);
 

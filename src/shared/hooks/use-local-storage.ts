@@ -2,17 +2,10 @@
 
 import { useState, useEffect } from "react";
 
-// A custom hook that works like useState, but persists the value to localStorage.
-//
-// Usage: const [name, setName] = useLocalStorage("user-name", "Guest");
-//
-// SSR-safe: starts with `initialValue` on both server and client to prevent
-// hydration mismatches, then upgrades to the stored value after mount.
 export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(initialValue);
   const [hydrated, setHydrated] = useState(false);
 
-  // Read the saved value once after mount (client-only).
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -27,8 +20,6 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     setHydrated(true);
   }, [key]);
 
-  // Write to localStorage when the value changes — but only after the initial
-  // read has finished, otherwise we'd overwrite the saved value with the default.
   useEffect(() => {
     if (!hydrated) return;
     if (typeof window === "undefined") return;

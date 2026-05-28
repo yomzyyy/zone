@@ -27,10 +27,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
-    // Wipe per-user local state so the next person at this browser doesn't
-    // inherit board, sessions, or active timer from the previous account.
-    // The migration flag is also cleared so a future guest -> signin flow
-    // can re-migrate from a fresh slate.
     if (typeof window !== "undefined") {
       try {
         window.localStorage.removeItem("zone-board-state");
@@ -39,7 +35,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         window.localStorage.removeItem("zone-active-task-id");
         window.localStorage.removeItem("zone-guest-migrated");
       } catch {
-        /* swallow */
       }
     }
     setUser(null);

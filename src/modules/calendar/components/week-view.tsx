@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 import { cn } from "@/shared/utils/utils";
 import { Input } from "@/shared/components/ui/input";
 import { PriorityBadge } from "@/modules/tasks/components/priority-badge";
-import type { Tag, Task } from "@/modules/tasks/types";
+import type { Priority, Tag, Task } from "@/modules/tasks/types";
 import { buildWeekDays, dateKey, WEEKDAY_LABELS } from "../utils";
 
 interface WeekViewProps {
@@ -15,6 +15,20 @@ interface WeekViewProps {
   onSelectTask: (task: Task) => void;
   onCreateTaskOnDate: (dateIso: string, title: string) => void;
 }
+
+const PRIORITY_RANK: Record<Priority, number> = {
+  urgent: 0,
+  high: 1,
+  medium: 2,
+  low: 3,
+};
+
+const PRIORITY_DOT: Record<Priority, string> = {
+  urgent: "bg-red-500",
+  high: "bg-orange-500",
+  medium: "bg-blue-500",
+  low: "bg-zinc-400",
+};
 
 export function WeekView({
   reference,
@@ -33,12 +47,15 @@ export function WeekView({
       list.push(task);
       map.set(key, list);
     }
+    for (const [key, list] of map) {
+      list.sort(
+        (a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority],
+      );
+      map.set(key, list);
+    }
     return map;
   }, [tasks]);
 
-  // At most one column is in "adding" state at a time. The active dateKey
-  // owns the inline input; clicking a different column's "+ Add task"
-  // moves the input there.
   const [addingForDate, setAddingForDate] = useState<string | null>(null);
   const [draftTitle, setDraftTitle] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -66,8 +83,6 @@ export function WeekView({
   }
 
   return (
-    // On phones the 7 columns can't all fit at a usable width — let the
-    // whole row scroll horizontally and give each column a sensible minimum.
     <div className="scrollbar-subtle grid flex-1 grid-flow-col auto-cols-[minmax(150px,1fr)] gap-2 overflow-x-auto min-h-0 md:grid-flow-row md:grid-cols-7 md:auto-cols-auto md:overflow-x-visible">
       {days.map((day, idx) => {
         const key = dateKey(day.date);
@@ -116,8 +131,6 @@ export function WeekView({
               ))}
             </div>
 
-            {/* Inline add-task footer — Trello-style. Toggles between a
-                "+ Add task" link and an input row. */}
             {isAdding ? (
               <div className="shrink-0">
                 <Input

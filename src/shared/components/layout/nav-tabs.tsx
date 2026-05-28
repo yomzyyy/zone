@@ -9,9 +9,6 @@ interface NavTabsProps {
   onTabChange: (tab: TabId) => void;
 }
 
-// Renders the Focus | Tasks | Calendar tabs in the top center.
-// The active highlight is a pill that animates between tabs by measuring
-// the active button's actual position — works regardless of label length.
 export function NavTabs({ activeTab, onTabChange }: NavTabsProps) {
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [pill, setPill] = useState({ width: 0, left: 0 });

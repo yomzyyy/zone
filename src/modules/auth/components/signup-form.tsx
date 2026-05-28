@@ -23,9 +23,6 @@ export function SignUpForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // Validation only "activates" after the first submit attempt, so users don't
-  // see red the moment the form mounts. After that, errors update live as
-  // they fix the field.
   const [submitted, setSubmitted] = useState(false);
   const router = useRouter();
   const supabase = createClient();

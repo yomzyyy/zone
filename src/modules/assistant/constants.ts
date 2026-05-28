@@ -2,7 +2,7 @@ export const ASSISTANT_DAILY_LIMIT = 10;
 
 export const ASSISTANT_STORAGE_KEYS = {
   HISTORY: "zone-assistant-history",
-  USAGE: "zone-assistant-usage", // { date: "YYYY-MM-DD", count: number }
+  USAGE: "zone-assistant-usage",
 } as const;
 
 export const ASSISTANT_MODEL = "claude-haiku-4-5-20251001";

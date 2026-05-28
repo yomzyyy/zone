@@ -1,9 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-// Refreshes the Supabase auth session cookie on every request so server
-// components see a logged-in user. Renamed from `middleware.ts` to `proxy.ts`
-// per Next.js 16's new naming convention; the API is otherwise identical.
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -31,12 +28,9 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  // Network errors from Supabase shouldn't 500 every request — fall back
-  // to the response with whatever cookies are already present.
   try {
     await supabase.auth.getUser();
   } catch {
-    /* swallow — auth provider on the client will retry */
   }
 
   return supabaseResponse;

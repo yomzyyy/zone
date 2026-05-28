@@ -1,7 +1,5 @@
 import { PASSWORD_MIN_LENGTH } from "../constants";
 
-// Pragmatic email check — RFC 5322-compliant regex is huge; this catches the
-// shapes that real users actually paste in.
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export const NAME_MAX_LENGTH = 80;
@@ -28,8 +26,6 @@ export function validatePassword(password: string): string | null {
   return null;
 }
 
-// Login uses a softer check — existing accounts may pre-date the current
-// minimum length rule, so we only require that something was typed.
 export function validateLoginPassword(password: string): string | null {
   if (!password) return "Password is required";
   return null;

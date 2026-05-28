@@ -2,10 +2,6 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { createClient } from "@/shared/lib/supabase/server";
 
-// Open relays burn your domain reputation and Resend quota fast — anyone
-// could POST { email } and trick your server into emailing arbitrary
-// recipients. So: require an authenticated session, ignore the body's
-// email, only ever send to the caller's own user.email.
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -30,8 +26,6 @@ export async function POST(request: Request) {
   }
 
   const resend = new Resend(apiKey);
-  // Default to the request's own origin if NEXT_PUBLIC_APP_URL isn't set —
-  // never point at a domain we don't control.
   const requestOrigin = new URL(request.url).origin;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? requestOrigin;
 
@@ -59,8 +53,6 @@ export async function POST(request: Request) {
   }
 }
 
-// All styles are inline because Gmail and most other clients strip <style>
-// blocks. Layout is table-based for the same compatibility reason.
 function renderWelcomeEmail({
   name,
   appUrl,

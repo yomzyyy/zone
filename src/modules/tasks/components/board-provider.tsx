@@ -98,7 +98,6 @@ export const BoardContext = createContext<BoardContextValue | undefined>(
   undefined,
 );
 
-// Fire-and-forget helper: callers don't await DB writes — UI stays optimistic.
 function fireAndForget<T>(label: string, p: Promise<T>) {
   p.catch((err) => {
     console.warn(`[board sync] ${label} failed:`, err);
@@ -115,8 +114,6 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     typeof window === "undefined" ? null : createClient(),
   );
 
-  // The "are we wired up to push to Supabase" target. Memoized so callbacks
-  // can list it as a real dependency instead of disabling exhaustive-deps.
   const sync = useMemo(() => {
     const supabase = supabaseRef.current;
     if (!supabase || !isAuthenticated || !user || !isSupabaseConfigured()) {
@@ -125,10 +122,6 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     return { supabase, userId: user.id };
   }, [isAuthenticated, user]);
 
-  // When authenticated, the DB is the source of truth — fetch on first
-  // signed-in mount and replace local state. On sign-out (user transitions
-  // to null) we reset to INITIAL_STATE so the previous user's board doesn't
-  // bleed into a fresh guest session on a shared browser.
   const hydratedForUserRef = useRef<string | null>(null);
   const lastUserIdRef = useRef<string | null>(null);
   useEffect(() => {
@@ -139,8 +132,6 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     lastUserIdRef.current = currentUserId;
 
     if (!sync) {
-      // Signed out (or never signed in this session). Reset in-memory state
-      // so the next view doesn't show the prior user's tasks.
       setState(INITIAL_STATE);
       hydratedForUserRef.current = null;
       return;
@@ -166,9 +157,6 @@ export function BoardProvider({ children }: { children: ReactNode }) {
     })();
   }, [authLoading, sync, setState]);
 
-  // Self-heal on mount:
-  //   1. Drop duplicate task IDs (legacy bug in pre-fix moveTask).
-  //   2. Backfill `completed` for tasks saved before the field existed.
   useEffect(() => {
     setState((prev) => {
       const seen = new Set<string>();

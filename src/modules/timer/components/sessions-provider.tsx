@@ -50,14 +50,9 @@ function writeLocal(sessions: CompletedSession[]) {
       JSON.stringify(sessions),
     );
   } catch {
-    /* swallow */
   }
 }
 
-// Holds completed sessions in one place so accounts don't leak through
-// localStorage. On sign-in we replace state with the user's actual sessions
-// from Supabase; on sign-out we wipe local state so the next user (or guest)
-// sees a clean slate.
 export function SessionsProvider({ children }: { children: ReactNode }) {
   const [sessions, setSessions] = useState<CompletedSession[]>([]);
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -65,7 +60,6 @@ export function SessionsProvider({ children }: { children: ReactNode }) {
     typeof window === "undefined" ? null : createClient(),
   );
 
-  // Hydrate from localStorage once on mount (guest path).
   const hydratedFromLocalRef = useRef(false);
   useEffect(() => {
     if (hydratedFromLocalRef.current) return;
@@ -73,9 +67,6 @@ export function SessionsProvider({ children }: { children: ReactNode }) {
     setSessions(readLocal());
   }, []);
 
-  // Mirror state to localStorage so timer hook reads (which still use
-  // localStorage as the source of recovery state) and Stats reloads stay
-  // consistent. Only writes after first hydration to avoid clobbering.
   useEffect(() => {
     if (!hydratedFromLocalRef.current) return;
     writeLocal(sessions);
@@ -89,9 +80,6 @@ export function SessionsProvider({ children }: { children: ReactNode }) {
     return { supabase, userId: user.id };
   }, [isAuthenticated, user]);
 
-  // Replace state with the user's sessions from the DB on sign-in. On
-  // sign-out (transition to no user), wipe local state so the next person
-  // sitting at this browser doesn't see the prior user's stats.
   const lastUserIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (authLoading) return;
@@ -101,7 +89,6 @@ export function SessionsProvider({ children }: { children: ReactNode }) {
     lastUserIdRef.current = currentUserId;
 
     if (!sync) {
-      // Signed out (or never signed in this session). Reset to empty.
       setSessions([]);
       return;
     }

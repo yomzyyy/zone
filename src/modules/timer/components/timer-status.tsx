@@ -7,7 +7,6 @@ interface TimerStatusProps {
   currentCycle: number;
 }
 
-// The contextual status text shown below the timer digits.
 export function TimerStatus({
   timerState,
   elapsed,

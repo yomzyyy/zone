@@ -23,7 +23,7 @@ export function startOfDay(d: Date): Date {
 
 export function startOfWeek(d: Date): Date {
   const copy = startOfDay(d);
-  const day = copy.getDay(); // 0 = Sunday
+  const day = copy.getDay();
   copy.setDate(copy.getDate() - day);
   return copy;
 }

@@ -50,7 +50,6 @@ export function TaskCard({
       {...listeners}
       onClick={(e) => {
         if (isDragging) return;
-        // Avoid triggering on drag pointer events
         if (e.detail === 0) return;
         onClick?.();
       }}
@@ -65,7 +64,6 @@ export function TaskCard({
         <button
           type="button"
           aria-label={task.completed ? "Mark incomplete" : "Mark complete"}
-          // Stop propagation so the card's drag/click handlers don't fire.
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();

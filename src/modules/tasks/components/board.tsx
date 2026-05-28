@@ -54,8 +54,6 @@ export function Board({ runningTaskId, onEnterZone }: BoardProps) {
   function handlePanPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     if (e.button !== 0) return;
     const target = e.target as HTMLElement;
-    // Don't pan when pointer is on an interactive control or a draggable card —
-    // those have their own pointer handling. Column body / gaps / background are fair game.
     if (
       target.closest(
         "button, input, textarea, a, [role='button'], [data-task-card]",
@@ -82,9 +80,6 @@ export function Board({ runningTaskId, onEnterZone }: BoardProps) {
     panState.current = null;
   }
 
-  // Map vertical wheel scroll → horizontal scroll on the columns row.
-  // Skips when an inner scrollable (e.g. a column's task list) can absorb the
-  // event, so vertical scrolling within columns still works as expected.
   function handleWheel(e: React.WheelEvent<HTMLDivElement>) {
     if (!scrollRef.current) return;
     if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;

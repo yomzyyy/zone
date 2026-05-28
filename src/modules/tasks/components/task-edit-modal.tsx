@@ -66,9 +66,6 @@ export function TaskEditModal({
   const [tagIds, setTagIds] = useState<string[]>([]);
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
-  // Manually grow the title textarea to fit its content (plain textarea, no
-  // field-sizing). useLayoutEffect runs sync before paint on every relevant
-  // change so the user never sees a too-small textarea.
   useLayoutEffect(() => {
     const el = titleRef.current;
     if (!el) return;
@@ -76,8 +73,6 @@ export function TaskEditModal({
     el.style.height = `${el.scrollHeight}px`;
   }, [title]);
 
-  // When the modal opens with a different task, the textarea may not yet be
-  // laid out at its final width, so re-measure on the next animation frame.
   useEffect(() => {
     if (!task) return;
     const raf = requestAnimationFrame(() => {

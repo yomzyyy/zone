@@ -10,10 +10,6 @@ interface TagChipProps {
   className?: string;
 }
 
-// When `onClick` is provided the chip is rendered as a real <button> so it's
-// keyboard-activatable. The remove "X" is always its own button — when the
-// outer is also a button, we use a span+role="presentation" wrapper for the
-// X so we don't nest interactive elements.
 export function TagChip({
   tag,
   onRemove,
@@ -22,8 +18,6 @@ export function TagChip({
   className,
 }: TagChipProps) {
   const baseClass = cn(
-    // max-w-full + min-w-0 + truncate inside lets long names shrink instead of
-    // stretching whatever flex/grid container the chip sits in.
     "inline-flex max-w-full min-w-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs",
     onClick && "cursor-pointer hover:opacity-80",
     active && "ring-2 ring-offset-1 ring-offset-background",

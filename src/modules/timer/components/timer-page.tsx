@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Play, Save, X } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
@@ -16,6 +16,11 @@ import { TimerStatus } from "./timer-status";
 import { TimerControls } from "./timer-controls";
 import { TimerSettingsModal } from "./timer-settings";
 import { SaveSessionPrompt } from "./save-session-prompt";
+import { formatTime, minutesToMs } from "../utils";
+import { STORAGE_KEYS } from "../constants";
+import type { TimerSession } from "../types";
+
+const DEFAULT_TITLE = "Zone — Flow Timer & Task Manager";
 
 interface TimerPageProps {
   activeTaskId?: string | null;
@@ -40,7 +45,57 @@ export function TimerPage({ activeTaskId, onClearActiveTask }: TimerPageProps = 
     return board.tasks.find((t) => t.id === activeTaskId)?.title ?? null;
   }, [activeTaskId, board.tasks]);
 
-  // Recovery prompt — shown when returning to a page with a running timer
+  useEffect(() => {
+    if (timer.timerState === "idle") {
+      document.title = DEFAULT_TITLE;
+      return;
+    }
+
+    function computeAndSet() {
+      try {
+        const raw = window.localStorage.getItem(STORAGE_KEYS.ACTIVE_SESSION);
+        if (!raw) return;
+        const sess = JSON.parse(raw) as TimerSession;
+        const startedAt = new Date(sess.startedAt).getTime();
+        const elapsedMs =
+          sess.timerState === "paused"
+            ? sess.pausedElapsed
+            : sess.pausedElapsed + (Date.now() - startedAt);
+
+        const isBreak = sess.pomodoroState?.isBreak ?? false;
+        let displayMs = elapsedMs;
+        if (settings.mode === "pomodoro") {
+          const target = isBreak
+            ? minutesToMs(settings.breakDuration)
+            : minutesToMs(settings.focusDuration);
+          displayMs = Math.max(0, target - elapsedMs);
+        }
+
+        const time = formatTime(displayMs);
+        const phase =
+          sess.timerState === "paused"
+            ? "Paused"
+            : isBreak
+              ? "Break"
+              : "Focus";
+        document.title = `${time} · ${phase} — Zone`;
+      } catch {
+      }
+    }
+
+    computeAndSet();
+    const id = window.setInterval(computeAndSet, 1000);
+    return () => {
+      window.clearInterval(id);
+      document.title = DEFAULT_TITLE;
+    };
+  }, [
+    timer.timerState,
+    settings.mode,
+    settings.focusDuration,
+    settings.breakDuration,
+  ]);
+
   if (timer.showRecovery) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-6">
@@ -78,7 +133,6 @@ export function TimerPage({ activeTaskId, onClearActiveTask }: TimerPageProps = 
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-8">
-      {/* Active task banner */}
       {activeTaskId && taskTitle && (
         <div className="flex items-center gap-2 rounded-full border bg-card/40 px-4 py-1.5 text-sm">
           <span className="text-muted-foreground">Working on:</span>
@@ -96,28 +150,26 @@ export function TimerPage({ activeTaskId, onClearActiveTask }: TimerPageProps = 
         </div>
       )}
 
-      {/* Pomodoro cycle indicator */}
       {settings.mode === "pomodoro" && timer.timerState !== "idle" && (
         <div className="text-sm text-muted-foreground">
-          {timer.isBreak ? "Break" : `Focus — Cycle ${timer.currentCycle}`}
+          {timer.isBreak
+            ? `Break — Cycle ${timer.currentCycle} of ${settings.cyclesTarget}`
+            : `Focus — Cycle ${timer.currentCycle} of ${settings.cyclesTarget}`}
         </div>
       )}
 
-      {/* Timer display */}
       <TimerDisplay
         elapsed={timer.elapsed}
         remaining={timer.remaining}
         mode={settings.mode}
       />
 
-      {/* Status text */}
       <TimerStatus
         timerState={timer.timerState}
         elapsed={timer.elapsed}
         currentCycle={timer.currentCycle}
       />
 
-      {/* Controls */}
       <TimerControls
         timerState={timer.timerState}
         onStart={timer.start}
@@ -128,7 +180,6 @@ export function TimerPage({ activeTaskId, onClearActiveTask }: TimerPageProps = 
         onOpenSettings={() => setSettingsOpen(true)}
       />
 
-      {/* Settings modal */}
       <TimerSettingsModal
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
@@ -142,7 +193,6 @@ export function TimerPage({ activeTaskId, onClearActiveTask }: TimerPageProps = 
         onDismiss={timer.dismissSavePrompt}
       />
 
-      {/* Sign-up nudge for guests */}
       {!isAuthenticated && (
         <p className="mt-4 text-sm text-muted-foreground">
           <Link

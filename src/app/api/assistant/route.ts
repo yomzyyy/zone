@@ -39,9 +39,6 @@ ${taskLines}`;
 }
 
 export async function POST(request: Request) {
-  // Hard-disable: feature isn't shipped yet. Removing the UI entry point in
-  // layout is the primary gate; this is the second layer in case a stale
-  // client still has the panel cached.
   const enabledRaw = (process.env.ASSISTANT_ENABLED ?? "").toLowerCase();
   if (enabledRaw !== "true" && enabledRaw !== "1") {
     return NextResponse.json(
@@ -72,8 +69,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Message required" }, { status: 400 });
   }
 
-  // Auth + per-user rate limit. Required — without auth an attacker could
-  // drain Anthropic credits by hitting this endpoint anonymously.
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -148,7 +143,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Persist + bump usage on success (best-effort).
   try {
     await Promise.all([
       appendMessage(supabase, userId, "user", body.message),

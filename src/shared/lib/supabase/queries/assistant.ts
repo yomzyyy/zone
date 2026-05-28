@@ -26,9 +26,6 @@ export async function getOrCreateUsage(
   return { date: data.date, count: data.message_count };
 }
 
-// Atomic in a single round trip: the RPC does INSERT..ON CONFLICT DO UPDATE
-// SET message_count = message_count + 1 RETURNING message_count, so two
-// concurrent calls can't both read the old count and both write count+1.
 export async function incrementUsage(
   supabase: SupabaseClient,
   _userId: string,

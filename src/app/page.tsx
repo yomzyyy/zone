@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Navbar } from "@/shared/components/layout/navbar";
 import { TimerPage } from "@/modules/timer/components/timer-page";
@@ -25,6 +25,12 @@ export default function HomePage() {
   const { isAuthenticated } = useAuth();
   const board = useBoard();
 
+  useEffect(() => {
+    if (!activeTaskId) return;
+    const taskExists = board.tasks.some((t) => t.id === activeTaskId);
+    if (!taskExists) setActiveTaskId(null);
+  }, [activeTaskId, board.tasks, setActiveTaskId]);
+
   function handleEnterZone(taskId: string) {
     if (activeTaskId && activeTaskId !== taskId) {
       const currentTitle =
@@ -43,9 +49,6 @@ export default function HomePage() {
       <Navbar activeTab={activeTab} onTabChange={setActiveTab} />
 
       <div className="flex flex-1 min-h-0">
-        {/* TimerPage stays mounted across tabs so the timer keeps ticking
-            even while you browse Tasks/Calendar. Hidden via display:none
-            when not active. */}
         <div
           className={cn(
             "flex flex-1 min-h-0",

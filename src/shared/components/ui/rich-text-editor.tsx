@@ -12,11 +12,6 @@ interface RichTextEditorProps {
   id?: string;
 }
 
-// Whitelist of tags this editor produces. Anything else (script tags, event
-// handler attrs, image tags, javascript: URIs) is stripped before either
-// hitting onChange or being injected back into the DOM. We sanitize on BOTH
-// the write side (so we never persist nasty HTML) and the read side (so a
-// poisoned row from elsewhere can't run code in the editor session).
 const ALLOWED_TAGS = ["b", "strong", "i", "em", "u", "br", "p", "div"];
 const ALLOWED_ATTRS: string[] = [];
 
@@ -35,8 +30,6 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
 
-  // Sync external value into the DOM. Skip when innerHTML already matches —
-  // re-setting it would collapse the caret to the start.
   useEffect(() => {
     const el = editorRef.current;
     if (!el) return;
@@ -57,9 +50,6 @@ export function RichTextEditor({
     flush();
   }
 
-  // The browser handles Ctrl+B/I/U on contentEditable natively, but onInput
-  // doesn't always fire afterward — so the parent value can drift. Flushing
-  // explicitly on these keystrokes keeps things in sync.
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
     if (!(e.ctrlKey || e.metaKey)) return;
     const k = e.key.toLowerCase();

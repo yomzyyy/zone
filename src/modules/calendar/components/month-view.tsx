@@ -5,8 +5,28 @@ import { createPortal } from "react-dom";
 import { Plus, X } from "lucide-react";
 import { cn } from "@/shared/utils/utils";
 import { STATUS_STYLES } from "@/modules/tasks/constants";
-import type { Tag, Task } from "@/modules/tasks/types";
+import type { Priority, Tag, Task } from "@/modules/tasks/types";
 import { buildMonthGrid, dateKey, WEEKDAY_LABELS } from "../utils";
+
+const PRIORITY_RANK: Record<Priority, number> = {
+  urgent: 0,
+  high: 1,
+  medium: 2,
+  low: 3,
+};
+
+const PRIORITY_DOT: Record<Priority, string> = {
+  urgent: "bg-red-500",
+  high: "bg-orange-500",
+  medium: "bg-blue-500",
+  low: "bg-zinc-400",
+};
+
+function sortByPriority(list: Task[]): Task[] {
+  return [...list].sort(
+    (a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority],
+  );
+}
 
 interface MonthViewProps {
   reference: Date;
@@ -40,6 +60,9 @@ export function MonthView({
       const list = map.get(key) ?? [];
       list.push(task);
       map.set(key, list);
+    }
+    for (const [key, list] of map) {
+      map.set(key, sortByPriority(list));
     }
     return map;
   }, [tasks]);
@@ -105,11 +128,19 @@ export function MonthView({
                       onSelectTask(task);
                     }}
                     className={cn(
-                      "truncate rounded px-1.5 py-0.5 text-[11px] text-left",
+                      "flex min-w-0 items-center gap-1 rounded px-1.5 py-0.5 text-[11px] text-left",
                       STATUS_STYLES[task.status],
                     )}
+                    title={`${task.priority} · ${task.title}`}
                   >
-                    {task.title}
+                    <span
+                      className={cn(
+                        "h-1.5 w-1.5 shrink-0 rounded-full",
+                        PRIORITY_DOT[task.priority],
+                      )}
+                      aria-hidden
+                    />
+                    <span className="min-w-0 truncate">{task.title}</span>
                   </button>
                 ))}
                 {dayTasks.length > 3 && (
@@ -166,8 +197,6 @@ function DayPopover({
     if (adding) inputRef.current?.focus();
   }, [adding]);
 
-  // Position the popover near the anchor cell, flipping when it would overflow
-  // the viewport. Run as a layout effect so we measure before paint.
   useLayoutEffect(() => {
     if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
@@ -188,7 +217,6 @@ function DayPopover({
     setPosition({ left, top });
   }, [state]);
 
-  // Close on outside click or Escape.
   useEffect(() => {
     function handlePointerDown(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
@@ -242,7 +270,7 @@ function DayPopover({
         </button>
       </div>
 
-      <div className="flex flex-col gap-1 max-h-72 overflow-y-auto px-2 pb-2 scrollbar-subtle">
+      <div className="flex flex-col gap-1 max-h-72 overflow-y-auto px-2 pt-1 pb-2 scrollbar-subtle">
         {state.tasks.length === 0 ? (
           <p className="px-2 py-1 text-xs text-muted-foreground">
             No tasks yet.
@@ -253,9 +281,19 @@ function DayPopover({
               key={task.id}
               type="button"
               onClick={() => onSelectTask(task)}
-              className="shrink-0 rounded-md bg-card px-2 py-1.5 text-xs text-card-foreground text-left ring-1 ring-foreground/10 transition-colors hover:ring-foreground/25 break-words [overflow-wrap:anywhere]"
+              className="flex shrink-0 items-start gap-2 rounded-md bg-card px-2 py-1.5 text-xs text-card-foreground text-left ring-1 ring-foreground/10 transition-colors hover:ring-foreground/25"
+              title={`${task.priority} · ${task.title}`}
             >
-              {task.title}
+              <span
+                className={cn(
+                  "mt-1 h-1.5 w-1.5 shrink-0 rounded-full",
+                  PRIORITY_DOT[task.priority],
+                )}
+                aria-hidden
+              />
+              <span className="min-w-0 break-words [overflow-wrap:anywhere]">
+                {task.title}
+              </span>
             </button>
           ))
         )}

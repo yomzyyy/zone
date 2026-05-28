@@ -1,14 +1,9 @@
 import type { Column, Task, TaskStatus } from "./types";
 
-// Always returns a UUID — required by Postgres `uuid` columns once the board
-// syncs to Supabase. Historical prefixed IDs in old localStorage data still
-// work as opaque strings.
 export function generateId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
-  // Defensive fallback — modern environments (browser, Node 14.17+) have
-  // crypto.randomUUID, but if it's missing we still want a valid v4-shaped UUID.
   const hex = (n: number) =>
     Math.floor(Math.random() * 16 ** n)
       .toString(16)

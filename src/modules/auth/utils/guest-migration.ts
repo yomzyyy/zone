@@ -37,11 +37,6 @@ export async function migrateGuestData(
     return { tasksMigrated: 0, sessionsMigrated: 0, skipped: true };
   }
 
-  // Set the flag IMMEDIATELY (best-effort). If the migration crashes mid-way
-  // (network drop, browser closed), re-mounting won't replay the loop and
-  // double-insert tags/tasks. The cost is that a partial migration leaves
-  // some local data orphaned — but that's strictly better than duplicates,
-  // and re-mounting fetches the canonical server state anyway.
   window.localStorage.setItem(MIGRATION_FLAG, new Date().toISOString());
 
   await ensureDefaultColumns(supabase, userId);
@@ -59,7 +54,6 @@ export async function migrateGuestData(
   let tasksMigrated = 0;
   let sessionsMigrated = 0;
 
-  // Insert tags first to get IDs we can reference.
   const tagIdMap = new Map<string, string>();
   for (const tag of board.tags) {
     const { data, error } = await supabase
@@ -70,7 +64,6 @@ export async function migrateGuestData(
     if (!error && data) tagIdMap.set(tag.id, data.id as string);
   }
 
-  // Fetch the user's columns (default columns just got seeded).
   const { data: columns } = await supabase
     .from("columns")
     .select("id,status")
@@ -80,7 +73,6 @@ export async function migrateGuestData(
     columnByStatus.set(c.status, c.id);
   }
 
-  // Tasks — map onto the seeded default columns by status.
   for (const task of board.tasks) {
     const targetCol =
       columnByStatus.get(task.status) ??
@@ -115,7 +107,6 @@ export async function migrateGuestData(
       await supabase.from("task_tags").insert(tagLinks);
     }
 
-    // Migrate the task's per-task time log entries as zone_sessions.
     if (task.timeLog.length > 0) {
       const rows = task.timeLog.map((log) => ({
         user_id: userId,
@@ -131,7 +122,6 @@ export async function migrateGuestData(
     }
   }
 
-  // Untethered sessions (not linked to any task)
   if (sessions.length > 0) {
     const rows = sessions.map((s) => ({
       user_id: userId,

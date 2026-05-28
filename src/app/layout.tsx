@@ -39,8 +39,6 @@ export default function RootLayout({
                 </main>
                 <Footer />
               </div>
-              {/* Zone Assistant is built but not ready for production —
-                  re-add <AssistantButton /> here when launching. */}
               <ActiveTimerChip />
               <Toaster />
               </SessionsProvider>

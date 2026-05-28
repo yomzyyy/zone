@@ -87,7 +87,6 @@ export function CalendarHeader({
   );
   const pickerRef = useRef<HTMLDivElement>(null);
 
-  // Sync the picker to whatever the calendar is currently showing each time it opens.
   useEffect(() => {
     if (pickerOpen) {
       setPickerYear(reference.getFullYear());
@@ -96,7 +95,6 @@ export function CalendarHeader({
     }
   }, [pickerOpen, reference]);
 
-  // Close on outside click or Escape.
   useEffect(() => {
     if (!pickerOpen) return;
     function handlePointerDown(e: MouseEvent) {
@@ -115,7 +113,6 @@ export function CalendarHeader({
     };
   }, [pickerOpen]);
 
-  // Step the picker's *internal* month independently of the calendar's reference.
   function stepPickerMonth(delta: number) {
     setPickerMonth((m) => {
       const next = m + delta;

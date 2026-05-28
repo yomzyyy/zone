@@ -14,7 +14,6 @@ interface TimerControlsProps {
   onOpenSettings: () => void;
 }
 
-// The action buttons below the timer.
 export function TimerControls({
   timerState,
   onStart,
@@ -26,7 +25,6 @@ export function TimerControls({
 }: TimerControlsProps) {
   return (
     <div className="flex items-center gap-3">
-      {/* Main action button — changes based on state */}
       {timerState === "running" ? (
         <Button size="lg" onClick={onPause} className="gap-2 px-8">
           <Pause className="h-5 w-5" />
@@ -55,7 +53,6 @@ export function TimerControls({
         </Button>
       )}
 
-      {/* Reset — only show when there's something to reset */}
       {timerState === "paused" && (
         <Button size="lg" variant="outline" onClick={onReset} className="gap-2">
           <RotateCcw className="h-4 w-4" />
@@ -63,7 +60,6 @@ export function TimerControls({
         </Button>
       )}
 
-      {/* Settings — always visible but disabled when running */}
       <Button
         size="lg"
         variant="outline"

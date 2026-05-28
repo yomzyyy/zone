@@ -51,9 +51,6 @@ function rowToTask(row: TaskRow, tagIds: string[]): Task {
     tagIds,
     position: row.position,
     timeLog: [],
-    // Prefer the explicit DB column; fall back to status==="done" for rows
-    // written before migration 0006 (the backfill should have covered them,
-    // but the fallback keeps us safe if a single row slips through).
     completed: row.completed ?? row.status === "done",
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -105,7 +102,6 @@ export async function fetchBoardState(supabase: SupabaseClient): Promise<{
     tagsByTask.set(link.task_id, list);
   }
 
-  // Group zone_sessions back into per-task time logs.
   const logsByTask = new Map<string, TimeLogEntry[]>();
   for (const row of (sessionsRes.data ?? []) as SessionRow[]) {
     if (!row.task_id || !row.ended_at) continue;
@@ -141,12 +137,6 @@ export async function fetchBoardState(supabase: SupabaseClient): Promise<{
 
   return { columns, tasks, tags };
 }
-
-// ============================================================================
-// Mutations — every callsite is fire-and-forget from the UI's perspective.
-// Errors are surfaced to the console; the local state is the source of truth
-// for the current session and gets reconciled on next mount via fetchBoardState.
-// ============================================================================
 
 export async function insertTaskRow(
   supabase: SupabaseClient,
@@ -216,9 +206,6 @@ export async function replaceTaskTags(
   if (insErr) throw insErr;
 }
 
-// Bulk position update — calls a Postgres function that applies all updates
-// atomically inside a single transaction. Concurrent moves can no longer
-// interleave into duplicate positions, and the round trip is one not N.
 export async function reindexTaskPositions(
   supabase: SupabaseClient,
   rows: { id: string; columnId: string; position: number }[],
@@ -321,10 +308,6 @@ export async function insertTimeLogRow(
   if (error) throw error;
 }
 
-// _userId is kept in the signature for callsite clarity but unused — the
-// RPC now derives the target user from auth.uid() server-side (locked down
-// in migration 0005). This prevents one user from seeding columns onto
-// another user's board.
 export async function ensureDefaultColumns(
   supabase: SupabaseClient,
   _userId: string,
